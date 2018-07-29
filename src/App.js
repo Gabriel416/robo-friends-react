@@ -1,44 +1,48 @@
 import React from "react";
+import { connect } from "react-redux";
 import CardList from "./CardList";
 import SearchBox from "./SearchBox";
 import Scroll from "./Scroll";
 import "tachyons";
+
+import { setSearchField, requestRobots } from "./actions";
+
+const mapStateToProps = state => {
+  console.log(state, "state");
+  return {
+    search: state.searchRobots.searchField,
+    robots: state.requestRobots.robots,
+    isPending: state.requestRobots.isPending,
+    error: state.requestRobots.error
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onSearchChange: event => {
+      dispatch(setSearchField(event.target.value));
+    },
+    onRequestRobots: () => dispatch(requestRobots())
+  };
+};
 class App extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      robots: [],
-      search: ""
-    };
-  }
-
   componentDidMount() {
-    fetch("https://jsonplaceholder.typicode.com/users")
-      .then(response => response.json())
-      .then(users => {
-        this.setState({ robots: users });
-      });
-  }
-
-  onSearchChange(event) {
-    this.setState({ search: event.target.value });
+    this.props.onRequestRobots();
   }
 
   render() {
-    const filterdRobots = this.state.robots.filter(robot => {
-      return robot.name.toLowerCase().includes(this.state.search.toLowerCase());
+    const { search, onSearchChange, robots, isPending } = this.props;
+    const filterdRobots = robots.filter(robot => {
+      return robot.name.toLowerCase().includes(search.toLowerCase());
     });
 
-    if (!this.state.robots) {
+    if (isPending) {
       return <h3>Loading...</h3>;
     } else {
       return (
         <div className="tc">
           <h1>Robo Friends</h1>
-          <SearchBox
-            search={this.state.search}
-            searchChange={this.onSearchChange.bind(this)}
-          />
+          <SearchBox search={search} searchChange={onSearchChange} />
           <Scroll>
             <CardList robots={filterdRobots} />
           </Scroll>
@@ -48,4 +52,7 @@ class App extends React.Component {
   }
 }
 
-export default App;
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(App);
